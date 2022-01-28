@@ -40,12 +40,15 @@ async function dbConnect() {
 
 server.post('/participants', async (req, res) => {
     try {
+        if (!req.body.name) { return };
+
         const participant = {name: req.body.name, lastStatus: Date.now()};
         
         const validation = participantSchema.validate(participant, { abortEarly: false });
         if (validation.error) {
             console.log(validation.error.details);
             res.status(422).send(validation.error.details);
+            return;
         }
     
         const { mongoClient, db } = await dbConnect();
@@ -55,7 +58,6 @@ server.post('/participants', async (req, res) => {
         if (participantExist) {
             res.status(409).send('Usuário já cadastrado.');
             mongoClient.close();
-            return;
         }
 
         await participantsCollection.insertOne(participant);
@@ -102,6 +104,8 @@ server.post('/messages', async (req, res) => {
 
         const messagesCollection = db.collection('messages');
         await messagesCollection.insertOne(message);
+        mongoClient.close();
+
         res.sendStatus(201);
 
       } catch (err) {
@@ -110,29 +114,24 @@ server.post('/messages', async (req, res) => {
         return;
       }
 });
-server.post('/messages', async (req, res) => {
-    try {
-        const message = {
-            from: req.header('User'),
-            to: req.body.to,
-            text: req.body.text,
-            type: req.body.type,
-            time: dayjs(new Date()).format('HH:mm:ss')
-        };
 
-        const validation = messageSchema.validate(message, { abortEarly: false });
-        if (validation.error) {
-            console.log(validation.error.details);
-            mongoClient.close();
-            res.status(422).send(validation.error.details);
-            return;
-        }
-    
+server.get('/messages', async (req, res) => {
+    try {
+        const limit = (req.query.limit) ? parseInt(req.query.limit) : null;
+        const user = req.header('User');
+
         const { mongoClient, db } = await dbConnect();
 
         const messagesCollection = db.collection('messages');
-        await messagesCollection.insertOne(message);
-        res.sendStatus(201);
+        let messagesCursor = await messagesCollection.find({to: 'Todos'}, {to: user});
+        let messages = await messagesCursor.toArray();
+        
+        if (limit) {
+            messages = messages.slice(Math.max(messages.length - limit, 0));
+        }
+
+        mongoClient.close();
+        res.send(messages).status(201);
 
       } catch (err) {
         console.error(err);
