@@ -1,31 +1,39 @@
 import express, { json } from 'express';
 import cors from 'cors';
 import { MongoClient, ObjectId } from "mongodb";
-import joi from 'joi';
+import dayjs from 'dayjs';
+import Joi from 'joi';
 import dotenv from "dotenv";
 dotenv.config();
 
 const server = express();
 server.use(cors(), json());
 
-const participantSchema = joi.object({
-    name: joi.string().required(),
-    lastStatus: joi.number().required()
+const participantSchema = Joi.object({
+    name: Joi.string().min(3).max(30).required(),
+    lastStatus: Joi.number().required()
 });
 
-const mongoClient = new MongoClient(process.env.MONGO_URI);
+const messageSchema = Joi.object({
+    from: Joi.string().required(),
+    to: Joi.string().required(),
+    text: Joi.string().required(),
+    type: Joi.string().valid('message','private_message').required(),
+    time: Joi.string().pattern(new RegExp(/^(?:(?:([01]?\d|2[0-3]):)?([0-5]?\d):)?([0-5]?\d)$/)).required()
+});
+
 
 async function dbConnect() {
-    let db;
+    const mongoClient = new MongoClient(process.env.MONGO_URI, { useUnifiedTopology: true });
     try {
-        mongoClient.connect(() => {
-            db = mongoClient.db("chatUol");
-        });
+        await mongoClient.connect();
+        const db = mongoClient.db("chatUol");
+
         return {mongoClient, db};
 
     } catch (error) {
-        console.log('\ndeu erro ae\n');
         console.error(error);
+        mongoClient.close();
         return;
     }
 }
@@ -33,28 +41,103 @@ async function dbConnect() {
 server.post('/participants', async (req, res) => {
     try {
         const participant = {name: req.body.name, lastStatus: Date.now()};
+        
         const validation = participantSchema.validate(participant, { abortEarly: false });
-    
         if (validation.error) {
             console.log(validation.error.details);
             res.status(422).send(validation.error.details);
         }
     
         const { mongoClient, db } = await dbConnect();
-        const participantsCollection = await db.collection('participants');
-    
-        const participantExist = await participantsCollection.findOne({name: participant.name});
 
+        const participantsCollection =  db.collection('participants');
+        const participantExist = await participantsCollection.findOne({name: participant.name});
         if (participantExist) {
             res.status(409).send('Usuário já cadastrado.');
+            mongoClient.close();
+            return;
         }
 
         await participantsCollection.insertOne(participant);
+
+        const message = {
+            from: participant.name,
+            to: 'Todos',
+            text: 'entra na sala...',
+            type: 'status',
+            time: dayjs(new Date()).format('HH:mm:ss')
+        };
+        const messagesCollection = db.collection('messages');
+        await messagesCollection.insertOne(message);
+        
+        mongoClient.close();
         res.sendStatus(201);
 
       } catch (err) {
         console.error(err);
         res.sendStatus(500);
+        return;
+      }
+});
+
+server.post('/messages', async (req, res) => {
+    try {
+        const message = {
+            from: req.header('User'),
+            to: req.body.to,
+            text: req.body.text,
+            type: req.body.type,
+            time: dayjs(new Date()).format('HH:mm:ss')
+        };
+
+        const validation = messageSchema.validate(message, { abortEarly: false });
+        if (validation.error) {
+            console.log(validation.error.details);
+            mongoClient.close();
+            res.status(422).send(validation.error.details);
+            return;
+        }
+    
+        const { mongoClient, db } = await dbConnect();
+
+        const messagesCollection = db.collection('messages');
+        await messagesCollection.insertOne(message);
+        res.sendStatus(201);
+
+      } catch (err) {
+        console.error(err);
+        res.sendStatus(500);
+        return;
+      }
+});
+server.post('/messages', async (req, res) => {
+    try {
+        const message = {
+            from: req.header('User'),
+            to: req.body.to,
+            text: req.body.text,
+            type: req.body.type,
+            time: dayjs(new Date()).format('HH:mm:ss')
+        };
+
+        const validation = messageSchema.validate(message, { abortEarly: false });
+        if (validation.error) {
+            console.log(validation.error.details);
+            mongoClient.close();
+            res.status(422).send(validation.error.details);
+            return;
+        }
+    
+        const { mongoClient, db } = await dbConnect();
+
+        const messagesCollection = db.collection('messages');
+        await messagesCollection.insertOne(message);
+        res.sendStatus(201);
+
+      } catch (err) {
+        console.error(err);
+        res.sendStatus(500);
+        return;
       }
 });
 
