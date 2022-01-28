@@ -1,10 +1,12 @@
 {
   "name": "Chat_UOL_backend",
+  "type": "module",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx nodemon index.js"
   },
   "repository": {
     "type": "git",
@@ -16,5 +18,17 @@
   "bugs": {
     "url": "https://github.com/vitorcarneiro/Chat_UOL_backend/issues"
   },
-  "homepage": "https://github.com/vitorcarneiro/Chat_UOL_backend#readme"
+  "homepage": "https://github.com/vitorcarneiro/Chat_UOL_backend#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  },
+  "dependencies": {
+    "axios": "^0.25.0",
+    "cors": "^2.8.5",
+    "dayjs": "^1.10.7",
+    "dotenv": "^14.3.2",
+    "express": "^4.17.2",
+    "joi": "^17.6.0",
+    "mongodb": "^4.3.1"
+  }
 }
