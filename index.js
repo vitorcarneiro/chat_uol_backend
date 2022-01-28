@@ -45,7 +45,6 @@ server.post('/participants', async (req, res) => {
     try {    
         const validation = participantSchema.validate(participant, { abortEarly: false });
         if (validation.error) {
-            console.log(validation.error.details);
             res.status(422).send(validation.error.details);
             return;
         }
@@ -94,7 +93,6 @@ server.post('/messages', async (req, res) => {
 
         const validation = messageSchema.validate(message, { abortEarly: false });
         if (validation.error) {
-            console.log(validation.error.details);
             mongoClient.close();
             res.status(422).send(validation.error.details);
             return;
@@ -123,7 +121,7 @@ server.get('/messages', async (req, res) => {
         const { mongoClient, db } = await dbConnect();
 
         const messagesCollection = db.collection('messages');
-        const messagesCursor = await messagesCollection.find({to: 'Todos'}, {to: user});
+        const messagesCursor = await messagesCollection.find({$or: [ {to: 'Todos'}, {to: user}, {from: user}]});
         const messages = await messagesCursor.toArray();
         
         if (limit) {
@@ -141,8 +139,6 @@ server.get('/messages', async (req, res) => {
 });
 
 server.get('/participants', async (req, res) => {
-    const user = req.header('User');
-    
     try {
         const { mongoClient, db } = await dbConnect();
 
@@ -152,6 +148,38 @@ server.get('/participants', async (req, res) => {
 
         mongoClient.close();
         res.send(participants).status(201);
+
+      } catch (err) {
+        console.error(err);
+        res.sendStatus(500);
+        return;
+      }
+});
+
+
+server.post('/status', async (req, res) => {
+    const user = req.header('User');
+    
+    try {
+        const { mongoClient, db } = await dbConnect();
+
+        const participantsCollection =  db.collection('participants');
+        const userExist = await participantsCollection.findOne({name: user});
+
+        if (!userExist) {
+            res.sendStatus(404);
+            mongoClient.close();
+        }
+
+        await participantsCollection.updateOne({ 
+                name: user 
+            }, 
+            {
+                $set: { lastStatus: Date.now() } 
+            });
+
+        mongoClient.close();
+        res.sendStatus(200);
 
       } catch (err) {
         console.error(err);
