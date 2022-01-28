@@ -39,11 +39,10 @@ async function dbConnect() {
 }
 
 server.post('/participants', async (req, res) => {
-    try {
-        if (!req.body.name) { return };
-
-        const participant = {name: req.body.name, lastStatus: Date.now()};
-        
+    if (!req.body.name) { return };
+    const participant = {name: req.body.name, lastStatus: Date.now()};
+    
+    try {    
         const validation = participantSchema.validate(participant, { abortEarly: false });
         if (validation.error) {
             console.log(validation.error.details);
@@ -83,14 +82,15 @@ server.post('/participants', async (req, res) => {
 });
 
 server.post('/messages', async (req, res) => {
+    const message = {
+        from: req.header('User'),
+        to: req.body.to,
+        text: req.body.text,
+        type: req.body.type,
+        time: dayjs(new Date()).format('HH:mm:ss')
+    };
+    
     try {
-        const message = {
-            from: req.header('User'),
-            to: req.body.to,
-            text: req.body.text,
-            type: req.body.type,
-            time: dayjs(new Date()).format('HH:mm:ss')
-        };
 
         const validation = messageSchema.validate(message, { abortEarly: false });
         if (validation.error) {
@@ -116,15 +116,15 @@ server.post('/messages', async (req, res) => {
 });
 
 server.get('/messages', async (req, res) => {
+    const limit = (req.query.limit) ? parseInt(req.query.limit) : null;
+    const user = req.header('User');
+    
     try {
-        const limit = (req.query.limit) ? parseInt(req.query.limit) : null;
-        const user = req.header('User');
-
         const { mongoClient, db } = await dbConnect();
 
         const messagesCollection = db.collection('messages');
-        let messagesCursor = await messagesCollection.find({to: 'Todos'}, {to: user});
-        let messages = await messagesCursor.toArray();
+        const messagesCursor = await messagesCollection.find({to: 'Todos'}, {to: user});
+        const messages = await messagesCursor.toArray();
         
         if (limit) {
             messages = messages.slice(Math.max(messages.length - limit, 0));
@@ -132,6 +132,26 @@ server.get('/messages', async (req, res) => {
 
         mongoClient.close();
         res.send(messages).status(201);
+
+      } catch (err) {
+        console.error(err);
+        res.sendStatus(500);
+        return;
+      }
+});
+
+server.get('/participants', async (req, res) => {
+    const user = req.header('User');
+    
+    try {
+        const { mongoClient, db } = await dbConnect();
+
+        const participantsCollection =  db.collection('participants');
+        const participantsCursor = await participantsCollection.find({});
+        const participants = await participantsCursor.toArray();
+
+        mongoClient.close();
+        res.send(participants).status(201);
 
       } catch (err) {
         console.error(err);
