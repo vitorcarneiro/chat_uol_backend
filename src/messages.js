@@ -53,7 +53,7 @@ async function getMessages(req, res) {
         const { mongoClient, db } = await dbConnect();
 
         const messagesCollection = db.collection('messages');
-        const messagesCursor = await messagesCollection.find({$or: [ {type: 'message'}, {to: 'Todos'}, {to: user}, {from: user}]});
+        const messagesCursor = messagesCollection.find({$or: [ {type: 'message'}, {to: 'Todos'}, {to: user}, {from: user}]});
         const messages = await messagesCursor.toArray();
         
         if (limit) {
@@ -92,7 +92,7 @@ async function deleteMessage(req, res) {
             return;
         }
         
-        const deletedMessage = await messagesCollection.deleteOne({ _id: new ObjectId(id) });
+        await messagesCollection.deleteOne({ _id: new ObjectId(id) });
 
         mongoClient.close();
         res.sendStatus(200);
@@ -145,7 +145,6 @@ async function editMessage(req, res) {
         }
 
         await messagesCollection.updateOne({ _id: messageToEdit._id }, { $set: editedMessage });
-        console.log('tudo certo');
 
         mongoClient.close();
         res.sendStatus(201);
