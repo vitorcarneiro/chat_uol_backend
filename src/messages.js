@@ -53,7 +53,7 @@ async function getMessages(req, res) {
         const { mongoClient, db } = await dbConnect();
 
         const messagesCollection = db.collection('messages');
-        const messagesCursor = await messagesCollection.find({$or: [ {type: 'message'}, {to: user}, {from: user}]});
+        const messagesCursor = await messagesCollection.find({$or: [ {type: 'message'}, {to: 'Todos'}, {to: user}, {from: user}]});
         const messages = await messagesCursor.toArray();
         
         if (limit) {
@@ -72,7 +72,7 @@ async function getMessages(req, res) {
 
 async function deleteMessage(req, res) {
     const user = req.header('User');
-    const {id }= req.params;
+    const { id }= req.params;
     
     try {
         const { mongoClient, db } = await dbConnect();
@@ -81,18 +81,12 @@ async function deleteMessage(req, res) {
         const message = await messagesCollection.findOne({ _id: new ObjectId(id) });
 
         if (!message) {
-            console.log('entrou em !message');
-            
             res.sendStatus(404);
             mongoClient.close();
             return;
         }
         
-        if (message.from !== user) {
-            console.log('entrou em message.from !== user');
-            console.log(user);
-            console.log(message);
-            
+        if (message.from !== user) {     
             res.sendStatus(401);
             mongoClient.close();
             return;
@@ -110,4 +104,57 @@ async function deleteMessage(req, res) {
       }
 };
 
-export { postMessage, getMessages, deleteMessage }; 
+async function editMessage(req, res) {
+    const user = req.header('User');
+    const { id }= req.params;
+    
+    const editedMessage = {
+        from: req.header('User'),
+        to: req.body.to,
+        text: req.body.text,
+        type: req.body.type,
+        time: dayjs(new Date()).format('HH:mm:ss')
+    };
+    
+    try {
+
+        const validation = messageSchema.validate(editedMessage, { abortEarly: false });
+        if (validation.error) {
+            mongoClient.close();
+            res.status(422).send(validation.error.details);
+            return;
+        }
+    
+        const { mongoClient, db } = await dbConnect();
+
+        const messagesCollection = db.collection('messages');
+        const messageToEdit = await messagesCollection.findOne({ _id: new ObjectId(id) });
+        
+        if (!messageToEdit) {
+            console.log('entrou em: !messageToEdit');
+            res.sendStatus(404);
+            mongoClient.close();
+            return;
+        }
+
+        if (messageToEdit.from !== user) {
+            console.log('entrou em: messageToEdit.from !== user');
+            res.sendStatus(401);
+            mongoClient.close();
+            return;
+        }
+
+        await messagesCollection.updateOne({ _id: messageToEdit._id }, { $set: editedMessage });
+        console.log('tudo certo');
+
+        mongoClient.close();
+        res.sendStatus(201);
+
+      } catch (err) {
+        console.error(err);
+        res.sendStatus(500);
+        return;
+      }
+};
+
+export { postMessage, getMessages, deleteMessage, editMessage }; 

@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { logParticipant, getParticipants } from './src/participants.js';
-import { postMessage, getMessages, deleteMessage } from './src/messages.js';
+import { postMessage, getMessages, deleteMessage, editMessage } from './src/messages.js';
 import postStatus from './src/status.js';
 
 const server = express();
@@ -21,6 +21,8 @@ server.get('/messages', async (req, res) => getMessages(req, res));
 server.post('/status', async (req, res) => postStatus(req, res));
 
 server.delete('/messages/:id', async (req, res) => deleteMessage(req, res));
+
+server.put('/messages/:id', async (req, res) => editMessage(req, res));
 
 
 server.listen(5000, () => {
