@@ -52,7 +52,7 @@ async function getMessages(req, res) {
         const { mongoClient, db } = await dbConnect();
 
         const messagesCollection = db.collection('messages');
-        const messagesCursor = await messagesCollection.find({$or: [ {to: 'Todos'}, {to: user}, {from: user}]});
+        const messagesCursor = await messagesCollection.find({$or: [ {type: 'message'}, {to: user}, {from: user}]});
         const messages = await messagesCursor.toArray();
         
         if (limit) {
