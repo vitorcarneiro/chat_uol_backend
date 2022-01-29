@@ -71,6 +71,7 @@ server.post('/participants', async (req, res) => {
         await messagesCollection.insertOne(message);
         
         mongoClient.close();
+        await removeInactiveUser();
         res.sendStatus(201);
 
       } catch (err) {
@@ -187,6 +188,43 @@ server.post('/status', async (req, res) => {
         return;
       }
 });
+
+async function removeInactiveUser() {
+    console.log('entrou');
+    setInterval( async () => {
+        try {
+        const { mongoClient, db } = await dbConnect();
+
+        const participantsCollection =  db.collection('participants');
+        const participantsCursor = participantsCollection.find({});
+        const participants = await participantsCursor.toArray();
+
+        const messagesCollection = db.collection('messages');
+
+        for (const participant of participants) {
+            if (participant.lastStatus < Date.now() - 10000) {
+                console.log(participant);
+                await participantsCollection.deleteOne({});
+                        await messagesCollection.insertOne({
+                            from: participant.name,
+                            to: 'Todos',
+                            text: 'sai da sala...',
+                            type: 'status',
+                            time: dayjs(new Date()).format('HH:mm:ss')
+                        });
+            }
+        }
+
+        mongoClient.close();
+
+        } catch (err) {
+        console.error(err);
+        res.sendStatus(500);
+        return;
+        }
+        
+    }, 15000);
+}
 
 server.listen(5000, () => {
     console.log('Server started on http://localhost:5000');
