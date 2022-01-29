@@ -22,13 +22,14 @@ The following tools and frameworks were used in the construction of the project:
 
   [![wakatime](https://wakatime.com/badge/user/75b063fd-fc90-4981-92ec-8042466ed674/project/ad71c2d0-aa7e-4b11-80a5-a23e8c1029ff.svg)](https://wakatime.com/@vitorcarneiro/projects/utphnbpogn?start=2022-01-23&end=2022-01-29)
 
-  [![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)
+  ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)
 
 <p>
   <img style='margin: 5px;' src='https://img.shields.io/badge/back-end%20-%2320232a.svg?&style=flat&color=informational'> 
   <img style='margin: 5px;' src='https://img.shields.io/badge/express%20-%2320232a.svg?&style=flat&color=informational'>
   <img style='margin: 5px;' src='https://img.shields.io/badge/cors%20-%2320232a.svg?&style=flat&color=informational'>
   <img style='margin: 5px;' src='https://img.shields.io/badge/joi%20-%2320232a.svg?&style=flat&color=informational'>
+  <img style='margin: 5px;' src='https://img.shields.io/badge/dayjs%20-%2320232a.svg?&style=flat&color=informational'>
 </p>
 
 ## How to run
