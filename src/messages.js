@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import dayjs from 'dayjs';
+import { ObjectId } from 'mongodb';
 
 import dbConnect from './mongoClient.js';
 
@@ -69,4 +70,44 @@ async function getMessages(req, res) {
       }
 };
 
-export { postMessage, getMessages };
+async function deleteMessage(req, res) {
+    const user = req.header('User');
+    const {id }= req.params;
+    
+    try {
+        const { mongoClient, db } = await dbConnect();
+
+        const messagesCollection = db.collection('messages');
+        const message = await messagesCollection.findOne({ _id: new ObjectId(id) });
+
+        if (!message) {
+            console.log('entrou em !message');
+            
+            res.sendStatus(404);
+            mongoClient.close();
+            return;
+        }
+        
+        if (message.from !== user) {
+            console.log('entrou em message.from !== user');
+            console.log(user);
+            console.log(message);
+            
+            res.sendStatus(401);
+            mongoClient.close();
+            return;
+        }
+        
+        const deletedMessage = await messagesCollection.deleteOne({ _id: new ObjectId(id) });
+
+        mongoClient.close();
+        res.sendStatus(200);
+
+      } catch (err) {
+        console.error(err);
+        res.sendStatus(500);
+        return;
+      }
+};
+
+export { postMessage, getMessages, deleteMessage }; 
