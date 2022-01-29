@@ -8,7 +8,7 @@ const participantSchema = Joi.object({
     lastStatus: Joi.number().required()
 });
 
-async function logParticipant(req, res) {
+async function loginParticipant(req, res) {
     if (!req.body.name) { return };
     const participant = {name: req.body.name, lastStatus: Date.now()};
     
@@ -104,4 +104,4 @@ async function removeInactiveParticipant() {
     }, 15000);
 }
 
-export { logParticipant, getParticipants };
+export { loginParticipant, getParticipants };
