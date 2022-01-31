@@ -34,7 +34,7 @@ The following tools and frameworks were used in the construction of the project:
 
 ## How to run
 
-0. Befora all, it is necessary to run mongodb on your machine and set your MONGO_URI
+0. Befora all, it is necessary to run mongodb on your machine and set your MONGO_URI on .env file
 
 
 1. Clone this repository

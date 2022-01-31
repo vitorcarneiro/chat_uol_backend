@@ -9,7 +9,6 @@ const participantSchema = Joi.object({
 });
 
 async function loginParticipant(req, res) {
-    if (!req.body.name) { return };
     const participant = {name: req.body.name, lastStatus: Date.now()};
     
     try {    
@@ -23,9 +22,11 @@ async function loginParticipant(req, res) {
 
         const participantsCollection =  db.collection('participants');
         const participantExist = await participantsCollection.findOne({name: participant.name});
+
         if (participantExist) {
             res.status(409).send('Usuário já cadastrado.');
             mongoClient.close();
+            return;
         }
 
         await participantsCollection.insertOne(participant);

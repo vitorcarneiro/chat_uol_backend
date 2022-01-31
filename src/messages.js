@@ -4,8 +4,10 @@ import { ObjectId } from 'mongodb';
 
 import dbConnect from './mongoClient.js';
 
+let participantsOnline = [];
+
 const messageSchema = Joi.object({
-    from: Joi.string().required(),
+    from: Joi.string().invalid(...participantsOnline).required(),
     to: Joi.string().required(),
     text: Joi.string().required(),
     type: Joi.string().valid('message','private_message').required(),
@@ -22,15 +24,19 @@ async function postMessage(req, res) {
     };
     
     try {
+        const { mongoClient, db } = await dbConnect();
+        
+        const participantsCollection =  db.collection('participants');
+        const participantsData = await participantsCollection.find({}).toArray();
 
+        participantsOnline = participantsData.map(participantData => participantData.name);
+        
         const validation = messageSchema.validate(message, { abortEarly: false });
         if (validation.error) {
             mongoClient.close();
             res.status(422).send(validation.error.details);
             return;
         }
-    
-        const { mongoClient, db } = await dbConnect();
 
         const messagesCollection = db.collection('messages');
         await messagesCollection.insertOne(message);
@@ -117,6 +123,7 @@ async function editMessage(req, res) {
     };
     
     try {
+        const { mongoClient, db } = await dbConnect();
 
         const validation = messageSchema.validate(editedMessage, { abortEarly: false });
         if (validation.error) {
@@ -124,8 +131,10 @@ async function editMessage(req, res) {
             res.status(422).send(validation.error.details);
             return;
         }
-    
-        const { mongoClient, db } = await dbConnect();
+        const participantsCollection =  db.collection('participants');
+        const participantsData = await participantsCollection.find({}).toArray();
+
+        participantsOnline = participantsData.map(participantData => participantData.name);
 
         const messagesCollection = db.collection('messages');
         const messageToEdit = await messagesCollection.findOne({ _id: new ObjectId(id) });
