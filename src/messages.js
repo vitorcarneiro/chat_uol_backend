@@ -54,7 +54,6 @@ async function postMessage(req, res) {
 async function getMessages(req, res) {
     const limit = (req.query.limit) ? parseInt(req.query.limit) : null;
     const user = req.header('User');
-    console.log(limit);
     
     try {
         const { mongoClient, db } = await dbConnect();
@@ -139,14 +138,12 @@ async function editMessage(req, res) {
         const messageToEdit = await messagesCollection.findOne({ _id: new ObjectId(id) });
         
         if (!messageToEdit) {
-            console.log('entrou em: !messageToEdit');
             res.sendStatus(404);
             mongoClient.close();
             return;
         }
 
         if (messageToEdit.from !== user) {
-            console.log('entrou em: messageToEdit.from !== user');
             res.sendStatus(401);
             mongoClient.close();
             return;
