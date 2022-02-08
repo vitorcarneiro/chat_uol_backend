@@ -57,7 +57,7 @@ async function getParticipants(req, res) {
         const { mongoClient, db } = await dbConnect();
 
         const participantsCollection =  db.collection('participants');
-        const participantsCursor = await participantsCollection.find({});
+        const participantsCursor = participantsCollection.find({});
         const participants = await participantsCursor.toArray();
 
         mongoClient.close();

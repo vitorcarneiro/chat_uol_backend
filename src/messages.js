@@ -54,17 +54,16 @@ async function postMessage(req, res) {
 async function getMessages(req, res) {
     const limit = (req.query.limit) ? parseInt(req.query.limit) : null;
     const user = req.header('User');
+    console.log(limit);
     
     try {
         const { mongoClient, db } = await dbConnect();
 
         const messagesCollection = db.collection('messages');
         const messagesCursor = messagesCollection.find({$or: [ {type: 'message'}, {to: 'Todos'}, {to: user}, {from: user}]});
-        const messages = await messagesCursor.toArray();
+        let messages = await messagesCursor.toArray();
         
-        if (limit) {
-            messages = messages.slice(Math.max(messages.length - limit, 0));
-        }
+        if (limit) { messages = messages.slice(Math.max(messages.length - limit, 0)); }
 
         mongoClient.close();
         res.send(messages).status(201);
